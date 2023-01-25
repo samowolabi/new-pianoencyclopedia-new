@@ -102,7 +102,6 @@ var modules = function() {
 
 			// Open App Details Function
 			document.querySelectorAll('.openAppDetailsDiv').forEach(function (value) {
-				console.log(value);
 				value.addEventListener('click', function (event) {
 					// Open App Details Function
 					OpenAppDetailsModal(event, response);
