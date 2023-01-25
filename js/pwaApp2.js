@@ -131,6 +131,21 @@ let showInstallPromotion = () => {
     document.querySelector('.installPromotionDiv').innerHTML = html;
 }
 
+// Initialize deferredPrompt for use later to show browser install prompt.
+var deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+    console.log('beforeinstallprompt');
+    // Prevent the mini-infobar from appearing on mobile
+    e.preventDefault();
+    // Stash the event so it can be triggered later.
+    deferredPrompt = e;
+    // Optionally, send analytics event that PWA install promo was shown.
+    //console.log(`'beforeinstallprompt' event was fired.`);
+    if (!isIos()) {
+        showInstallPromotionIntervalFunc();
+    }
+});
+
 
 var displayMode = null;
 if (window.matchMedia) {
@@ -154,21 +169,6 @@ if (window.matchMedia) {
         console.log('DISPLAY_MODE_CHANGED', displayMode);
     });
 }
-
-// Initialize deferredPrompt for use later to show browser install prompt.
-var deferredPrompt;
-window.addEventListener('beforeinstallprompt', (e) => {
-    console.log('beforeinstallprompt');
-    // Prevent the mini-infobar from appearing on mobile
-    e.preventDefault();
-    // Stash the event so it can be triggered later.
-    deferredPrompt = e;
-    // Optionally, send analytics event that PWA install promo was shown.
-    //console.log(`'beforeinstallprompt' event was fired.`);
-    if (!isIos()) {
-        showInstallPromotionIntervalFunc();
-    }
-});
 
 
 
