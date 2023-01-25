@@ -1,33 +1,51 @@
 /****************** PWA APP *****************/
 
 function enablePWACode() {
-    let installPWAApp;
-    let hideInstallPromotion;
-    let hideInstallPromotionIOS;
+	let installPWAApp;
+	// let hideInstallPromotion;
+	// let hideInstallPromotionIOS;
 
-    if ("serviceWorker" in navigator) {
-        window.addEventListener("load", function () {
-            navigator.serviceWorker
-                .register("js/serviceWorker.js")
-                .then(res => console.log("service worker registered"))
-                .catch(err => console.log("service worker not registered", err))
-        })
-    }
+	if ("serviceWorker" in navigator) {
+		window.addEventListener("load", function () {
+			navigator.serviceWorker
+				.register("js/serviceWorker.js")
+				.then(res => console.log("service worker registered"))
+				.catch(err => console.log("service worker not registered", err))
+		})
+	}
 
-    // Detects if device is on iOS 
-    const isIos = () => {
-        const userAgent = window.navigator.userAgent.toLowerCase();
-        return /iphone|ipad|ipod/.test(userAgent);
-    }
+	// Detects if device is on iOS 
+	const isIos = () => {
+		const userAgent = window.navigator.userAgent.toLowerCase();
+		return /iphone|ipad|ipod/.test(userAgent);
+	}
 
-    var displayMode = null;
+	var displayMode = null;
 
-    hideInstallPromotionIOS = () => {
-        document.querySelector('.installPromotionDiv').innerHTML = ``;
-    }
+	var myTimer = null;
 
-    let showInstallPromotionIOS = () => {
-        let html = `
+	let hideInstallPromotion = () => {
+		let element = document.querySelector('.installPromotionDiv > div')
+		element.style.opacity = 0;
+		element.addEventListener('transitionend', function (event) {
+			document.querySelector('.installPromotionDiv').innerHTML = ``;
+		}, false);
+		element.addEventListener('webkitTransitionend', function (event) {
+			document.querySelector('.installPromotionDiv').innerHTML = ``;
+		}, false);
+
+		if (myTimer !== null) {
+			clearInterval(myTimer);
+		}
+		myTimer = setInterval(showInstallPromotionIntervalFunc, 3600000);
+	}
+
+	let hideInstallPromotionIOS = () => {
+		document.querySelector('.installPromotionDiv').innerHTML = ``;
+	}
+
+	let showInstallPromotionIOS = () => {
+		let html = `
         <style>
             .iosNotificationBarDiv {
                 width: 100%;
@@ -71,11 +89,11 @@ function enablePWACode() {
             </div>
         </div>
     `;
-        document.querySelector('.installPromotionDiv').innerHTML = html;
-    }
+		document.querySelector('.installPromotionDiv').innerHTML = html;
+	}
 
-    let showInstallPromotion = () => {
-        let html = `
+	let showInstallPromotion = () => {
+		let html = `
         <style>
             .promotionBarDiv {
                 opacity:1; 
@@ -144,101 +162,83 @@ function enablePWACode() {
             <button class="hideInstallPromotionButton" onclick="hideInstallPromotion()">Not Now</button>
         </div>
     `;
-        document.querySelector('.installPromotionDiv').innerHTML = html;
-    }
+		document.querySelector('.installPromotionDiv').innerHTML = html;
+	}
 
 
-    let showInstallPromotionIntervalFunc = () => {
-        if ((displayMode == null) || (displayMode == 'browser')) {
-            if (typeof (document.querySelector('.promotionBarDiv')) != 'undefined' && document.querySelector('.promotionBarDiv') != null) {
-            } else {
-                showInstallPromotion();
-            }
-        }
-    }
-
-    var myTimer = null;
-
-    hideInstallPromotion = () => {
-        let element = document.querySelector('.installPromotionDiv > div')
-        element.style.opacity = 0;
-        element.addEventListener('transitionend', function (event) {
-            document.querySelector('.installPromotionDiv').innerHTML = ``;
-        }, false);
-        element.addEventListener('webkitTransitionend', function (event) {
-            document.querySelector('.installPromotionDiv').innerHTML = ``;
-        }, false);
-
-        if (myTimer !== null) {
-            clearInterval(myTimer);
-        }
-        myTimer = setInterval(showInstallPromotionIntervalFunc, 3600000);
-    }
+	let showInstallPromotionIntervalFunc = () => {
+		if ((displayMode == null) || (displayMode == 'browser')) {
+			if (typeof (document.querySelector('.promotionBarDiv')) != 'undefined' && document.querySelector('.promotionBarDiv') != null) {
+			} else {
+				showInstallPromotion();
+			}
+		}
+	}
 
 
-    // Initialize deferredPrompt for use later to show browser install prompt.
-    var deferredPrompt;
+	// Initialize deferredPrompt for use later to show browser install prompt.
+	var deferredPrompt;
 
-    window.addEventListener('beforeinstallprompt', (e) => {
-        console.log('beforeinstallprompt');
+	window.addEventListener('beforeinstallprompt', (e) => {
+		console.log('beforeinstallprompt');
 
-        // Prevent the mini-infobar from appearing on mobile
-        e.preventDefault();
-        // Stash the event so it can be triggered later.
-        deferredPrompt = e;
-        // Optionally, send analytics event that PWA install promo was shown.
-        //console.log(`'beforeinstallprompt' event was fired.`);
+		// Prevent the mini-infobar from appearing on mobile
+		e.preventDefault();
+		// Stash the event so it can be triggered later.
+		deferredPrompt = e;
+		// Optionally, send analytics event that PWA install promo was shown.
+		//console.log(`'beforeinstallprompt' event was fired.`);
 
-        if (!isIos()) {
-            showInstallPromotionIntervalFunc();
-        }
-    });
-
-
-    // Detects if device is in standalone mode
-    const isInStandaloneMode = () => ('standalone' in window.navigator) && (window.navigator.standalone);
-
-    // Checks if should display install popup notification:
-    if (isIos() && !isInStandaloneMode()) {
-        showInstallPromotionIOS();
-    }
+		if (!isIos()) {
+			showInstallPromotionIntervalFunc();
+		}
+	});
 
 
-    installPWAApp = async () => {
-        // Hide the app provided install promotion
-        hideInstallPromotion();
-        // Show the install prompt
-        deferredPrompt.prompt();
-        // Wait for the user to respond to the prompt
-        const { outcome } = await deferredPrompt.userChoice;
-        // Optionally, send analytics event with outcome of user choice
-        console.log(`User response to the install prompt: ${outcome}`);
-        // We've used the prompt, and can't use it again, throw it away
-        deferredPrompt = null;
-    }
+	// Detects if device is in standalone mode
+	const isInStandaloneMode = () => ('standalone' in window.navigator) && (window.navigator.standalone);
 
-    if (window.matchMedia) {
-        function getPWADisplayMode() {
-            const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-            if (document.referrer.startsWith('android-app://')) {
-                return 'twa';
-            } else if (navigator.standalone || isStandalone) {
-                return 'standalone';
-            }
-            return 'browser';
-        }
+	// Checks if should display install popup notification:
+	if (isIos() && !isInStandaloneMode()) {
+		showInstallPromotionIOS();
+	}
 
-        console.log("Display mode:" + getPWADisplayMode());
 
-        window.matchMedia('(display-mode: standalone)').addEventListener('change', (evt) => {
-            displayMode = 'browser';
-            if (evt.matches) {
-                displayMode = 'standalone';
-            }
-            // Log display mode change to analytics
-            console.log('DISPLAY_MODE_CHANGED', displayMode);
-        });
-    }
+	installPWAApp = async () => {
+		// Hide the app provided install promotion
+		hideInstallPromotion();
+		// Show the install prompt
+		deferredPrompt.prompt();
+		// Wait for the user to respond to the prompt
+		const { outcome } = await deferredPrompt.userChoice;
+		// Optionally, send analytics event with outcome of user choice
+		console.log(`User response to the install prompt: ${outcome}`);
+		// We've used the prompt, and can't use it again, throw it away
+		deferredPrompt = null;
+	}
+
+	if (window.matchMedia) {
+		function getPWADisplayMode() {
+			const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+			if (document.referrer.startsWith('android-app://')) {
+				return 'twa';
+			} else if (navigator.standalone || isStandalone) {
+				return 'standalone';
+			}
+			return 'browser';
+		}
+
+		console.log("Display mode:" + getPWADisplayMode());
+
+		window.matchMedia('(display-mode: standalone)').addEventListener('change', (evt) => {
+			displayMode = 'browser';
+			if (evt.matches) {
+				displayMode = 'standalone';
+			}
+			// Log display mode change to analytics
+			console.log('DISPLAY_MODE_CHANGED', displayMode);
+		});
+	}
 
 }
 
@@ -247,7 +247,7 @@ const urlParams = new URLSearchParams(window.location.search);
 // urlParams.has('native') && urlParams.get('native') === 'true' && enablePWACode();
 
 if (!urlParams.has('platform')) {
-    enablePWACode();
+	enablePWACode();
 }
 
 
@@ -257,60 +257,60 @@ if (!urlParams.has('platform')) {
 
 // Toggle Navigate Pages
 let openCloseFloatingButton = () => {
-    document.querySelector('.materialFloatingButtonContainer').classList.toggle('active');
-    document.querySelector('.materialFloatingButtonContainer .materialFloatingButton').classList.toggle('active');
+	document.querySelector('.materialFloatingButtonContainer').classList.toggle('active');
+	document.querySelector('.materialFloatingButtonContainer .materialFloatingButton').classList.toggle('active');
 }
 document.querySelector('.materialFloatingButtonContainer .materialFloatingButton').addEventListener('click', function (event) {
-    openCloseFloatingButton();
+	openCloseFloatingButton();
 });
 document.querySelector('.materialFloatingButtonContainer .materialFloatingLinkButton').addEventListener('click', function (event) {
-    openCloseFloatingButton();
+	openCloseFloatingButton();
 });
 
 
 // Go Home Button
 let backToHomeFunc = () => {
-    materialDialog.question("Please confirm.", "Would you like to go to the home screen?", {
-        "buttonNo": {
-            caption: "No",
-            additional: "data-value='close'"
-        },
-        "buttonYes": {
-            caption: "Yes",
-            href: `javascript: modules.GenerateAppDataFunction()`, // GenerateAppDataFunction() is a global module function
-            class: "goHomeButton",
-            //href:`javascript: ${alert()}`,
-            additional: "data-value='close'"
-        }
-    })
+	materialDialog.question("Please confirm.", "Would you like to go to the home screen?", {
+		"buttonNo": {
+			caption: "No",
+			additional: "data-value='close'"
+		},
+		"buttonYes": {
+			caption: "Yes",
+			href: `javascript: modules.GenerateAppDataFunction()`, // GenerateAppDataFunction() is a global module function
+			class: "goHomeButton",
+			//href:`javascript: ${alert()}`,
+			additional: "data-value='close'"
+		}
+	})
 }
 
 // Create dialog dynamically
 // Append html to end of body
 document.querySelector('body').insertAdjacentHTML('beforeend', '<div id="dialogRewardPointsAdded" class="materialDialog appDetailedContentModalDialog" data-on-init-callback="dialogRewardPointsAdded.init(thisComponent)"></div>');
-var dialogRewardPointsAdded = {}; 
+var dialogRewardPointsAdded = {};
 
 
-var plaformCustomBehavior = function() {
+var plaformCustomBehavior = function () {
 	var that = {};
-	var hidePremium = function(){
+	var hidePremium = function () {
 		$("html").addClass("app-hide-premium");
 	};
-	
-	var hideAds = function(){
+
+	var hideAds = function () {
 		$("html").addClass("app-hide-ads");
 	};
-	
-	var hideSignup = function(){
+
+	var hideSignup = function () {
 		$("html").addClass("app-hide-signup");
 	};
-	
-	var hideCustomDialogs = function(){
+
+	var hideCustomDialogs = function () {
 		$("html").addClass("app-custom-dialogs");
 	};
-	
 
-	
+
+
 	function getParameterByName(name, url = window.location.href) {
 		name = name.replace(/[\[\]]/g, '\\$&');
 		var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
@@ -319,7 +319,7 @@ var plaformCustomBehavior = function() {
 		if (!results[2]) return '';
 		return decodeURIComponent(results[2].replace(/\+/g, ' '));
 	}
-	
+
 	/*
 	MAC DESKTOP:
 	safari=true
@@ -340,28 +340,28 @@ var plaformCustomBehavior = function() {
 	mobile=true
 	iphone=true
 	*/
-	var getPlatformId = function(){
+	var getPlatformId = function () {
 		var platform = getParameterByName("platform");
 		var electron = getParameterByName("electron") ? "-electron" : "";
-		var cordova  = getParameterByName("cordova") ? "-cordova" : ""; 
+		var cordova = getParameterByName("cordova") ? "-cordova" : "";
 		//appleStore
 		return platform + electron + cordova;
-	}; 	
-	
-	var init = function(platform){
+	};
+
+	var init = function (platform) {
 		var platform = getPlatformId();
-		
+
 		console.log("Platform Custom Behavior", platform);
-		
-		if(platform == "iphone-cordova" || platform == "mac-electron" ){
+
+		if (platform == "iphone-cordova" || platform == "mac-electron") {
 			hidePremium();
 			hideAds();
 			hideSignup();
-			hideCustomDialogs(); 
-		} 
+			hideCustomDialogs();
+		}
 	}
-	
-	
+
+
 	init();
 	//that.run = run;
 	//return that;	
@@ -372,10 +372,10 @@ var plaformCustomBehavior = function() {
 
 /****************** MODULES JS *******************/
 
-var modules = function() {
+var modules = function () {
 	var that = {};
-	
-	var PlaceholderLoading = function(state){
+
+	var PlaceholderLoading = function (state) {
 		try {
 			// Placeholder
 			let placeholderHTML = `
@@ -415,7 +415,7 @@ var modules = function() {
 
 
 	// Loader Function
-	var ShowHideLoader = function(status){
+	var ShowHideLoader = function (status) {
 		try {
 			if (status === 'open') {
 				document.querySelector('body').style.overflow = "hidden";
@@ -429,11 +429,11 @@ var modules = function() {
 			console.error(error);
 		}
 	}
-	
-	var FetchFunction = async (baseURL=null, method=null, headersData=null, data=null) => {
+
+	var FetchFunction = async (baseURL = null, method = null, headersData = null, data = null) => {
 		try {
-			let headersObject={"Content-Type":"application/x-www-form-urlencoded"};
-			headersData&&(headersObject[headersData[0]]=headersData[1]);
+			let headersObject = { "Content-Type": "application/x-www-form-urlencoded" };
+			headersData && (headersObject[headersData[0]] = headersData[1]);
 
 			let fetchParams = {
 				method: method,
@@ -448,7 +448,7 @@ var modules = function() {
 
 			const response = await fetch(baseURL, fetchParams);
 			if (response.status == 500 || response.status == 404) {
-				return {status: false, message: "We can't process your request at the moment, Please try again later"}
+				return { status: false, message: "We can't process your request at the moment, Please try again later" }
 			} else {
 				return await response.json();
 			}
@@ -457,7 +457,7 @@ var modules = function() {
 			return error;
 		}
 	}
-  
+
 	var GenerateAppDataFunction = async () => {
 		try {
 			// Show Placeholder
@@ -549,10 +549,10 @@ var modules = function() {
 	* Output = "https://piano.com/new/path/?color=blue&fruit=orange&tool=hammer&valid=yes#!/some/parameters"
 	* All params will be correctly merged, and hashes will be preserved
 	*/
-	var addCurrentQueryParamsToUrl = function(url){ 
+	var addCurrentQueryParamsToUrl = function (url) {
 		//This value usually starts with "?"
-		let currentQueryParams = window.location.search; 
-		 
+		let currentQueryParams = window.location.search;
+
 		// Check if the iframe URL contains a hash
 		if (url.indexOf('#') !== -1) {
 			// Split the URL by the hash and insert the query params between the two parts
@@ -562,7 +562,7 @@ var modules = function() {
 			return `${beforeHash}${beforeHash.indexOf('?') === -1 ? '?' : '&'}${currentQueryParams.substring(1)}#${afterHash}`;
 		} else {
 			// Append the query params to the iframe URL
-			return`${url}${url.indexOf('?') === -1 ? '' : '&'}${currentQueryParams.substring(1)}`;
+			return `${url}${url.indexOf('?') === -1 ? '' : '&'}${currentQueryParams.substring(1)}`;
 		}
 	}
 
@@ -587,8 +587,8 @@ var modules = function() {
 			console.error(error);
 		}
 	}
-	
-		
+
+
 	var OpenAppDetailsModal = (event, response) => {
 		try {
 
@@ -656,8 +656,8 @@ var modules = function() {
 			console.error(error);
 		}
 	}
-	 
-	 
+
+
 	const LoginLogoutFunc = async (response) => {
 		try {
 			if (response.logged) {
@@ -689,14 +689,14 @@ var modules = function() {
 			console.log(error);
 		}
 	}
-	
- 
 
-	that.LoginLogoutFunc = LoginLogoutFunc; 
+
+
+	that.LoginLogoutFunc = LoginLogoutFunc;
 	that.OpenAppDetailsModal = OpenAppDetailsModal;
-	that.LoadAppWithIframe = LoadAppWithIframe; 
+	that.LoadAppWithIframe = LoadAppWithIframe;
 	that.renderAppUIFunc = renderAppUIFunc;
-	that.GenerateAppDataFunction = GenerateAppDataFunction;  
+	that.GenerateAppDataFunction = GenerateAppDataFunction;
 	that.PlaceholderLoading = PlaceholderLoading;
 	that.ShowHideLoader = ShowHideLoader;
 	that.FetchFunction = FetchFunction;
@@ -709,11 +709,11 @@ var modules = function() {
 /****************** APP JS *******************/
 
 const init = async () => {
-    // Generate App Data
-    let generateAppDataResponse =  await modules.GenerateAppDataFunction();
+	// Generate App Data
+	let generateAppDataResponse = await modules.GenerateAppDataFunction();
 
-    // Login/Logout Text Status Function
-    modules.LoginLogoutFunc(generateAppDataResponse);
+	// Login/Logout Text Status Function
+	modules.LoginLogoutFunc(generateAppDataResponse);
 }
 
 init();
