@@ -2,7 +2,8 @@ console.log('Service Worker: Registered');
 
 const staticPianoEncyclopedia = "pianoencyclopedia-global-v1";
 
-const baseDirectory = "https://pianoencyclopedia.com/en/app-global"
+// const baseDirectory = "https://pianoencyclopedia.com/en/app-global"
+const baseDirectory = "https://new-pianoencyclopedia-new.vercel.app"
 const assets = [
   baseDirectory,
   baseDirectory + "/index.html",
